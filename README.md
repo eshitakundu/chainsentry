@@ -1,197 +1,53 @@
+````md
 # NOOA Mini Lab
 
-A minimal hands-on experiment with NVIDIA NOOA (Object-Oriented Agents).
+A small experiment with NVIDIA NOOA to understand how an agent can interact with and modify the state of a Python object.
 
-This repository explores a simple but important agentic concept:
+The project simulates a workspace containing unorganized files. A NOOA agent inspects the files, decides where they belong, moves them into categories, and verifies the final workspace state.
 
-> An LLM does not have to only generate text. It can operate through methods on a live Python object and change the state of that object.
+## Example
 
-The project implements a small autonomous workspace organizer.
-
-It runs entirely in the terminal and uses a simulated workspace, making it easy to understand the core NOOA programming model without adding APIs, databases, frontends, or other infrastructure.
-
----
-
-## What It Does
-
-The program starts with a simulated workspace containing unorganized files:
+Initial workspace:
 
 ```text
-annual_report.pdf
-vacation_photo.png
-analysis.py
-sales_2026.csv
-project_ideas.md
-```
+unfiled/
+├── annual_report.pdf
+├── vacation_photo.png
+├── analysis.py
+├── sales_2026.csv
+└── project_ideas.md
+````
 
-Initially, every file is:
-
-```text
-unfiled
-```
-
-A NOOA agent is given capabilities to:
+After the agent runs:
 
 ```text
-list files
-inspect files
-move files
-inspect the current workspace state
+documents/
+└── annual_report.pdf
+
+images/
+└── vacation_photo.png
+
+code/
+└── analysis.py
+
+data/
+└── sales_2026.csv
+
+notes/
+└── project_ideas.md
 ```
 
-The agent must autonomously determine where the files belong and organize them.
+The files are simulated in memory. No real files on the computer are modified.
 
-For example:
+## How It Works
 
-```text
-annual_report.pdf
-        ↓
-documents
-
-vacation_photo.png
-        ↓
-images
-
-analysis.py
-        ↓
-code
-
-sales_2026.csv
-        ↓
-data
-
-project_ideas.md
-        ↓
-notes
-```
-
----
-
-# Why This Is More Than a Prompt
-
-A basic LLM application often looks like:
-
-```text
-prompt
-  ↓
-LLM
-  ↓
-text
-```
-
-The model receives information and generates an answer.
-
-This experiment is different.
-
-```text
-             Workspace state
-                   ▲
-                   │
-                   ▼
-          WorkspaceOrganizerAgent
-                   │
-          ┌────────┼─────────┐
-          │        │         │
-          ▼        ▼         ▼
-       inspect    move      verify
-          │        │         │
-          └────────┼─────────┘
-                   │
-                   ▼
-               NOOA agent
-```
-
-The agent does not simply say:
-
-```text
-"analysis.py should go into the code folder"
-```
-
-It can actually execute:
+The agent is defined using NVIDIA NOOA:
 
 ```python
-self.move_file(
-    "analysis.py",
-    "code",
-)
+class WorkspaceOrganizerAgent(Agent, llm=llm):
 ```
 
-That method changes the state of the Python object.
-
-The environment before and after the agent runs is therefore different.
-
----
-
-# Architecture
-
-```text
-                    main.py
-                       │
-                       ▼
-              WorkspaceOrganizerAgent
-                       │
-        ┌──────────────┼──────────────┐
-        │              │              │
-        ▼              ▼              ▼
-   list_files()   inspect_file()   move_file()
-        │              │              │
-        │              │              │
-        └──────────────┼──────────────┘
-                       │
-                       ▼
-                live Python state
-                       ▲
-                       │
-                       ▼
-               organize_workspace()
-                       │
-                      ...
-                       │
-                       ▼
-                  NVIDIA NOOA
-                       │
-                       ▼
-                    OpenRouter
-                       │
-                       ▼
-              autonomous actions
-                       │
-                       ▼
-               modified workspace
-```
-
----
-
-# Core NOOA Idea
-
-The agent is defined as:
-
-```python
-class WorkspaceOrganizerAgent(
-    Agent,
-    llm=llm,
-):
-```
-
-`Agent` comes from NVIDIA NOOA.
-
-The object contains both:
-
-```text
-normal Python methods
-```
-
-and:
-
-```text
-LLM-driven methods
-```
-
----
-
-## Normal Python Capabilities
-
-The following methods contain ordinary Python implementations:
+It has normal Python methods such as:
 
 ```python
 list_files()
@@ -200,167 +56,69 @@ move_file()
 get_workspace_state()
 ```
 
-For example:
-
-```python
-def move_file(
-    self,
-    filename: str,
-    destination: str,
-) -> str:
-```
-
-This method actually modifies:
-
-```python
-self._workspace
-```
-
-There is no LLM involved in performing the state update.
-
-Python performs the action.
-
----
-
-# The NOOA Method
+These methods interact with the workspace state.
 
 The main agentic method is:
 
 ```python
-async def organize_workspace(
-    self,
-) -> OrganizeReport:
+async def organize_workspace(self) -> OrganizeReport:
     ...
 ```
 
-The body contains:
+The `...` delegates the method to NOOA.
 
-```python
-...
-```
-
-Rather than implementing the procedure manually, the task is delegated through NOOA to the configured LLM strategy.
-
-The method's docstring tells the agent what it needs to accomplish:
+The agent can then decide which Python methods to call and in what order.
 
 ```text
-inspect the workspace
-
-move every unfiled file
-
-verify the final state
+list files
+    ↓
+inspect file
+    ↓
+choose destination
+    ↓
+move file
+    ↓
+repeat
+    ↓
+verify final state
 ```
 
-The agent determines which capabilities it needs to call and in what order.
+The important part is that the agent does not only generate a recommendation.
 
----
+It calls `move_file()` and actually changes the Python object's state.
 
-# Agent Interaction
+## NOOA Concepts Used
 
-A possible execution sequence is:
-
-```text
-organize_workspace()
-
-    ↓
-
-list_files()
-
-    ↓
-
-inspect_file("annual_report.pdf")
-
-    ↓
-
-move_file(
-    "annual_report.pdf",
-    "documents"
-)
-
-    ↓
-
-inspect_file("analysis.py")
-
-    ↓
-
-move_file(
-    "analysis.py",
-    "code"
-)
-
-    ↓
-
-...
-
-    ↓
-
-get_workspace_state()
-
-    ↓
-
-return OrganizeReport
-```
-
-The exact sequence is decided by the agent.
-
----
-
-# Live State
-
-The simulated workspace exists inside the agent:
+### Agent
 
 ```python
-self._workspace
+class WorkspaceOrganizerAgent(Agent, llm=llm):
 ```
 
-Before execution:
+The Python class becomes a NOOA agent.
 
-```json
-{
-  "unfiled": [
-    "annual_report.pdf",
-    "vacation_photo.png",
-    "analysis.py",
-    "sales_2026.csv",
-    "project_ideas.md"
-  ]
-}
+### Python Capabilities
+
+Methods such as:
+
+```python
+def move_file(...):
 ```
 
-After execution, the same Python object has been modified.
+contain normal Python code and perform the actual actions.
 
-For example:
+### LLM-Driven Method
 
-```json
-{
-  "unfiled": [],
-  "documents": [
-    "annual_report.pdf"
-  ],
-  "images": [
-    "vacation_photo.png"
-  ],
-  "code": [
-    "analysis.py"
-  ],
-  "data": [
-    "sales_2026.csv"
-  ],
-  "notes": [
-    "project_ideas.md"
-  ]
-}
+```python
+async def organize_workspace(...):
+    ...
 ```
 
-The final workspace state printed by the program comes directly from Python.
+NOOA uses the configured LLM to execute this task.
 
-It is not generated by the LLM.
+### Structured Output
 
----
-
-# Structured Output
-
-The agent also returns:
+The result follows a Pydantic model:
 
 ```python
 class OrganizeReport(BaseModel):
@@ -368,72 +126,16 @@ class OrganizeReport(BaseModel):
     summary: str
 ```
 
-This means the final agent response has a predictable structure.
+## Tech Stack
 
-Example:
+* Python
+* NVIDIA NOOA
+* OpenRouter
+* Pydantic
+* python-dotenv
+* uv
 
-```json
-{
-  "actions_taken": [
-    "Moved annual_report.pdf to documents",
-    "Moved vacation_photo.png to images",
-    "Moved analysis.py to code",
-    "Moved sales_2026.csv to data",
-    "Moved project_ideas.md to notes"
-  ],
-  "summary": "All workspace files were successfully organized."
-}
-```
-
----
-
-# OpenRouter
-
-The LLM is configured using:
-
-```python
-llm = get_llm_client(
-    "openrouter/auto"
-)
-```
-
-The OpenRouter API key is loaded from:
-
-```text
-.env
-```
-
-using:
-
-```python
-load_dotenv()
-```
-
-The API key is never committed to Git.
-
----
-
-# Project Structure
-
-```text
-nooa-mini-lab/
-│
-├── main.py
-├── README.md
-├── pyproject.toml
-├── uv.lock
-├── .python-version
-├── .gitignore
-└── .env
-```
-
-`.env` and `.venv/` remain local.
-
----
-
-# Setup
-
-The project is developed using Linux / WSL2.
+## Setup
 
 Clone the repository:
 
@@ -448,118 +150,69 @@ Install dependencies:
 uv sync
 ```
 
-Create:
-
-```text
-.env
-```
-
-and add:
+Create a `.env` file:
 
 ```env
 OPENROUTER_API_KEY=your_openrouter_api_key
 ```
 
-Run:
+Run the project:
 
 ```bash
 uv run main.py
 ```
 
----
-
-# Tech Stack
-
-- Python
-- NVIDIA NOOA
-- OpenRouter
-- LiteLLM
-- Pydantic
-- python-dotenv
-- uv
-
----
-
-# What This Demonstrates
-
-This experiment focuses on a few core concepts:
+## Sample Output
 
 ```text
-NOOA Agent
-      +
-live Python object
-      +
-callable Python methods
-      +
-state mutation
-      +
-LLM-selected actions
-      +
-structured output
+BEFORE
+
+unfiled:
+- annual_report.pdf
+- vacation_photo.png
+- analysis.py
+- sales_2026.csv
+- project_ideas.md
+
+NOOA AGENT RUNNING...
+
+AFTER
+
+documents:
+- annual_report.pdf
+
+images:
+- vacation_photo.png
+
+code:
+- analysis.py
+
+data:
+- sales_2026.csv
+
+notes:
+- project_ideas.md
 ```
 
-It intentionally avoids unnecessary complexity.
+## What I Learned
 
-There is:
+This project helped me understand the basic NOOA execution model:
 
 ```text
-no frontend
-no database
-no external API
-no RAG
-no multi-agent system
+agent
+  ↓
+inspect live Python state
+  ↓
+choose a method
+  ↓
+execute Python action
+  ↓
+state changes
+  ↓
+continue until task is complete
 ```
 
-The goal is simply to understand what makes an object-oriented agent different from a normal prompt-response application.
+The next step is to use the same pattern with real tools, external data, and larger agentic applications.
 
----
-
-# Limitations
-
-The workspace is simulated entirely in memory.
-
-No real files on the computer are moved or modified.
-
-This is intentional.
-
-It allows the NOOA interaction model to be explored without giving an experimental LLM permission to alter the real filesystem.
-
----
-
-# Next Step
-
-This repository is the first step in a larger learning progression:
-
-```text
-NOOA Mini Lab
-     │
-     │ basic object-oriented agent
-     ▼
-Agentic Application
-     │
-     │ multiple capabilities + frontend
-     ▼
-ChainSentry
-     │
-     │ real blockchain APIs + agents
-     ▼
-Web3 / smart-contract extensions
 ```
-
----
-
-# Key Takeaway
-
-The important difference is:
-
-```text
-LLM application:
-prompt → text
-
-NOOA experiment:
-environment ↔ agent ↔ actions
 ```
-
-The model is not only describing what should happen.
-
-It is using methods on a live Python object to make it happen.
