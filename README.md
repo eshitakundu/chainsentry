@@ -192,21 +192,3 @@ data:
 notes:
 - project_ideas.md
 ```
-
-## What I Learned
-
-This project helped me understand the basic NOOA execution model:
-
-```text
-agent
-  ↓
-inspect live Python state
-  ↓
-choose a method
-  ↓
-execute Python action
-  ↓
-state changes
-  ↓
-continue until task is complete
-```
