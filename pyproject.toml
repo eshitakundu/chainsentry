@@ -1,7 +1,7 @@
 [project]
-name = "chainsentry"
+name = "nooa-mini-lab"
 version = "0.1.0"
-description = "Add your description here"
+description = "Minimal NVIDIA NOOA experiment demonstrating an agent that inspects and modifies live Python state through object-oriented actions."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
