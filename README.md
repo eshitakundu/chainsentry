@@ -1,4 +1,3 @@
-````md
 # NOOA Mini Lab
 
 A small experiment with NVIDIA NOOA to understand how an agent can interact with and modify the state of a Python object.
@@ -16,7 +15,7 @@ unfiled/
 ├── analysis.py
 ├── sales_2026.csv
 └── project_ideas.md
-````
+```
 
 After the agent runs:
 
@@ -85,7 +84,7 @@ verify final state
 
 The important part is that the agent does not only generate a recommendation.
 
-It calls `move_file()` and actually changes the Python object's state.
+It calls `move_file()` and changes the Python object's state.
 
 ## NOOA Concepts Used
 
@@ -213,6 +212,3 @@ continue until task is complete
 ```
 
 The next step is to use the same pattern with real tools, external data, and larger agentic applications.
-
-```
-```
