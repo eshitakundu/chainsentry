@@ -210,5 +210,3 @@ state changes
   ↓
 continue until task is complete
 ```
-
-The next step is to use the same pattern with real tools, external data, and larger agentic applications.
